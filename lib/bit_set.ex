@@ -1,7 +1,6 @@
 require IEx
 
 defmodule BitSet do
-  use Bitwise
   use GenServer
 
   @moduledoc """
@@ -33,7 +32,6 @@ defmodule BitSet do
       bit_array = set_bit(pos, value, set)
 
       new_data = put_elem(data, array_index, bit_array)
-      IO.inspect(new_data)
       {:noreply, %{state | data: new_data}}
     end
   end
@@ -76,14 +74,17 @@ defmodule BitSet do
 
   # Client API
 
-  def start_link(opts) do
-    GenServer.start(__MODULE__, 8, opts)
+  @spec start_link(map()) :: {atom(), pid()}
+  def start_link(opts \\ %{length: 8}) do
+    GenServer.start(__MODULE__, opts[:length])
   end
 
+  @spec get(pid(), non_neg_integer()) :: boolean()
   def get(pid, pos) do
     GenServer.call(pid, {:get, pos})
   end
 
+  @spec set(pid(), non_neg_integer(), boolean()) :: atom()
   def set(pid, pos, value) do
     GenServer.cast(pid, {:set, pos, value})
   end
