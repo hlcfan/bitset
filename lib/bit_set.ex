@@ -12,10 +12,10 @@ defmodule BitSet do
 
   @impl true
   def init(length) do
-    bit_size = 8
+    bit_size = 64
 
     len =
-      ((length + 7) / bit_size)
+      ((length + 63) / bit_size)
       |> Kernel.trunc()
 
     bit_array = Tuple.duplicate(<<0::unsigned-big-integer-size(bit_size)>>, len)
@@ -26,25 +26,22 @@ defmodule BitSet do
   @impl true
   def handle_cast({:set, pos, value}, state = %{data: data, size: size, length: length}) do
     array_index = Kernel.div(pos, size)
-    array_pos = Kernel.rem(pos, size)
 
     if pos >= length do
       {:noreply, state}
     else
-      <<bit_array>> = elem(data, array_index)
+      set = elem(data, array_index)
+      <<start::size(pos), val::size(1), rest::bits>> = set
 
-      IO.puts("===Pos: #{array_pos}")
-
+      bit_value = if value, do: 1, else: 0
       bit_array =
-        if value do
-          bit_array ||| 1 <<< array_pos
+        if val != bit_value do
+          <<start::size(pos), bit_value::size(1), rest::bits>>
         else
-          bit_array &&& bnot(1 <<< array_pos)
+          set
         end
 
-      IO.inspect(Integer.to_string(bit_array, 2))
-
-      new_data = put_elem(data, array_index, <<bit_array>>)
+      new_data = put_elem(data, array_index, bit_array)
       IO.inspect(new_data)
       {:noreply, %{state | data: new_data}}
     end
@@ -53,15 +50,20 @@ defmodule BitSet do
   @impl true
   def handle_call({:get, pos}, _from, state = %{data: data, size: size, length: length}) do
     array_index = Kernel.div(pos, size)
-    array_pos = Kernel.rem(pos, size)
 
     res =
       if pos >= length do
         false
       else
-        <<bit_array>> = elem(data, array_index)
+        set = elem(data, array_index)
 
-        Bitwise.band(bit_array, 1 <<< array_pos) != 0
+        <<_::size(pos), val::size(1), _::bits>> = set
+
+        if val == 1 do
+          true
+        else
+          false
+        end
       end
 
     {:reply, res, state}
