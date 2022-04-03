@@ -3,22 +3,26 @@ defmodule BitSetTest do
   doctest BitSet
 
   setup do
-    bitset = start_supervised!(BitSet)
+    child_spec = %{
+      id: BitWise,
+      start: {BitSet, :start_link, [%{length: 8}]}
+    }
+
+    bitset = start_supervised!(child_spec)
     %{bitset: bitset}
   end
 
-  test "sets bit value",%{bitset: bitset} do
+  test "sets bit value", %{bitset: bitset} do
     assert BitSet.set(bitset, 1, true)
     assert BitSet.get(bitset, 1) == true
     assert BitSet.get(bitset, 2) == false
   end
 
-  test "gets bit value",%{bitset: bitset} do
+  test "gets bit value", %{bitset: bitset} do
     assert BitSet.get(bitset, 1) == false
   end
 
-  test "raises error if out of bound",%{bitset: bitset} do
+  test "raises error if out of bound", %{bitset: bitset} do
     assert BitSet.get(bitset, 20) == false
   end
-
 end
