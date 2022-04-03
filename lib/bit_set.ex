@@ -2,6 +2,7 @@ require IEx
 
 defmodule BitSet do
   use GenServer
+  @bit_size 64
 
   @moduledoc """
   Documentation for `BitSet`.
@@ -11,15 +12,13 @@ defmodule BitSet do
 
   @impl true
   def init(length) do
-    bit_size = 64
-
     len =
-      ((length + 63) / bit_size)
+      ((length + @bit_size - 1) / @bit_size)
       |> Kernel.trunc()
 
-    bit_array = Tuple.duplicate(<<0::unsigned-big-integer-size(bit_size)>>, len)
+    bit_array = Tuple.duplicate(<<0::unsigned-big-integer-size(@bit_size)>>, len)
 
-    {:ok, %{data: bit_array, size: bit_size, length: length}}
+    {:ok, %{data: bit_array, size: @bit_size, length: length}}
   end
 
   @impl true
@@ -29,7 +28,7 @@ defmodule BitSet do
     else
       array_index = Kernel.div(pos, size)
       set = elem(data, array_index)
-      bit_array = set_bit(pos, value, set)
+      bit_array = set_bit(pos|>Kernel.rem(@bit_size), value, set)
 
       new_data = put_elem(data, array_index, bit_array)
       {:noreply, %{state | data: new_data}}
@@ -59,6 +58,7 @@ defmodule BitSet do
       else
         array_index = Kernel.div(pos, size)
         set = elem(data, array_index)
+        pos = pos |> Kernel.rem(@bit_size)
 
         <<_::size(pos), val::size(1), _::bits>> = set
 
