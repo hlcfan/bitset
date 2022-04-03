@@ -1,6 +1,21 @@
 # BitSet
 
-**TODO: Add description**
+A simple implementation of BitSet using GenServer.
+
+It stores data in 64 bits.
+
+## API
+
+``` elixir
+iex(11)> {:ok, pid} = GenServer.start_link(BitSet, 42)
+{:ok, #PID<0.168.0>}
+iex(12)> BitSet.get(pid, 24)
+false
+iex(13)> BitSet.set(pid, 24, true)
+:ok
+iex(14)> BitSet.get(pid, 24)
+true
+```
 
 ## Installation
 
