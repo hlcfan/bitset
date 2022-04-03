@@ -25,21 +25,12 @@ defmodule BitSet do
 
   @impl true
   def handle_cast({:set, pos, value}, state = %{data: data, size: size, length: length}) do
-    array_index = Kernel.div(pos, size)
-
     if pos >= length do
       {:noreply, state}
     else
+      array_index = Kernel.div(pos, size)
       set = elem(data, array_index)
-      <<start::size(pos), val::size(1), rest::bits>> = set
-
-      bit_value = if value, do: 1, else: 0
-      bit_array =
-        if val != bit_value do
-          <<start::size(pos), bit_value::size(1), rest::bits>>
-        else
-          set
-        end
+      bit_array = set_bit(pos, value, set)
 
       new_data = put_elem(data, array_index, bit_array)
       IO.inspect(new_data)
@@ -47,14 +38,28 @@ defmodule BitSet do
     end
   end
 
+  defp set_bit(pos, value, set) when is_boolean(value) do
+    bit_value = if value, do: 1, else: 0
+    set_bit(pos, bit_value, set)
+  end
+
+  defp set_bit(pos, value, set) when is_integer(value) do
+    <<start::size(pos), val::size(1), rest::bits>> = set
+
+    if val != value do
+      <<start::size(pos), value::size(1), rest::bits>>
+    else
+      set
+    end
+  end
+
   @impl true
   def handle_call({:get, pos}, _from, state = %{data: data, size: size, length: length}) do
-    array_index = Kernel.div(pos, size)
-
     res =
       if pos >= length do
         false
       else
+        array_index = Kernel.div(pos, size)
         set = elem(data, array_index)
 
         <<_::size(pos), val::size(1), _::bits>> = set
